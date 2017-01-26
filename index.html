@@ -1,0 +1,147 @@
+<html>
+    <head>
+        <title>
+            NPM Watch
+        </title>
+            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+            <style>html {
+  font-family: sans-serif; }
+
+html, body {
+  min-height: 100%; }
+
+.fullheight {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column; }
+  .fullheight-top, .fullheight-bottom {
+    flex-grow: 0;
+    flex-shrink: 0; }
+  .fullheight-body {
+    flex-grow: 1; }
+
+html {
+  font-family: sans-serif; }
+
+html, body {
+  min-height: 100%; }
+
+a {
+  color: #0074D9; }
+
+.nwPackages {
+  list-style: none;
+  padding: 0; }
+  .nwPackages-item {
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+    transition: opacity 1s; }
+    .nwPackages-item:last-child {
+      border-width: 0; }
+
+.nwStatus {
+  font-weight: bold;
+  font-size: 80%; }
+  .nwStatus-on {
+    color: #111111; }
+  .nwStatus-off {
+    color: #AAAAAA; }
+
+.app-header {
+  margin-bottom: 24px; }
+
+.app-footer {
+  padding: 16px 0;
+  color: #777;
+  background-color: #efefef;
+  border-top: 1px solid #ededed; }
+</style>
+    </head>
+    <body>
+        <div class="fullheight">
+    <section class="fullheight-body app-body">
+        <div class="container">
+            <div class="app-header">
+                <h1>NPM Watch</h1>
+                <span class="nwStatus" al-class="nwStatus-on: connected, nwStatus-off: !connected">
+                    {{ connected ? "connected" : "disconnected" }}
+                </span>
+                <p>
+                    Track npm changes via web socket.
+                </p>
+            </div>
+            <div>
+                <ul class="nwPackages">
+                    <li
+                        class="nwPackages-item"
+                        al-repeat="pkg in packages"
+                        >
+                        <a href="https://npmjs.com/package/{{ pkg.name }}">{{ pkg.name }}</a> @ {{ getPkgVersion(pkg) }}
+                        <p>{{ pkg.description }}</p>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+    <footer class="fullheight-bottom app-footer">
+        <div class="container">
+            Crafted by <a href="https://github.com/rumkin">Rumkin</a> in 2017.
+            Built with <a href="https://www.npmjs.com/package/changes-stream">changes-stream</a> and <a href="https://www.npmjs.com/package/ws">ws</a>.
+            Source at <a href="https://github.com/rumkin/npmwatch">Github</a>.
+        </div>
+    </footer>    
+</div>
+
+            <script src="https://angularlight.org/bin/alight_0.12.last.min.js" type="text/javascript" language="javascript"></script>
+            <script type="text/javascript">;(function(){
+	'use strict';
+	
+	let packages = [];
+    
+	let app = alight.bootstrap('body', {
+	    connected: false,
+	    packages,
+	    getPkgVersion(pkg) {
+	        if ('dist-tags' in pkg) {
+	            return pkg['dist-tags'].latest;
+	        }
+	        else {
+	            return '';
+	        }
+	    }
+	});
+    
+    let socket = new WebSocket('wss://npmwatch.rumk.in');
+    
+    socket.onopen = function() {
+        app.$setValue('connected', true);
+        app.$scan();
+    };
+    
+    socket.onclose = function() {
+        app.$setValue('connected', false); 
+        app.$scan();
+    };
+    
+    socket.onmessage = function(e) {
+        let data;
+
+        try {
+            data = JSON.parse(e.data);
+        }
+        catch (e) {
+            return;
+        }
+        
+        if (data.event !== 'npm:update') {
+            return;
+        }
+        
+        packages = [data.data].concat(packages.slice(0, 20));
+        app.$setValue('packages', packages);
+        app.$scan();
+    };
+})();</script>
+        <!-- Built with JSVille -->
+    </body>
+</html>
