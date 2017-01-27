@@ -137,7 +137,7 @@ a {
             return;
         }
         
-        packages = [data.data].concat(packages.slice(0, 20));
+        packages = [data.data].concat(packages.slice(0, 300));
         app.$setValue('packages', packages);
         app.$scan();
     };
