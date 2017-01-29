@@ -104,72 +104,184 @@ a {
 	    getPkgVersion(pkg) {
 	        if ('dist-tags' in pkg) {
 	            return pkg['dist-tags'].latest;
+
+<html>
+    <head>
+        <title>
+            Test sandbox
+        </title>
+            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+            <style>html {
+  font-family: sans-serif; }
+
+html, body {
+  min-height: 100%; }
+
+.fullheight {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column; }
+  .fullheight-top, .fullheight-bottom {
+    flex-grow: 0;
+    flex-shrink: 0; }
+  .fullheight-body {
+    flex-grow: 1; }
+
+html {
+  font-family: sans-serif; }
+
+html, body {
+  min-height: 100%; }
+
+a {
+  color: #0074D9; }
+
+.nwPackages {
+  list-style: none;
+  padding: 0; }
+  .nwPackages-item {
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+    transition: opacity 1s; }
+    .nwPackages-item:last-child {
+      border-width: 0; }
+
+.nwStatus {
+  font-size: 80%; }
+
+.app-header {
+  margin-bottom: 16px; }
+
+.app-footer {
+  padding: 16px 0;
+  color: #777;
+  background-color: #efefef;
+  border-top: 1px solid #ededed; }
+</style>
+    </head>
+    <body>
+        <div class="fullheight">
+    <section class="fullheight-body app-body">
+        <div class="container">
+            <div class="app-header">
+                <h1>NPMer</h1>
+                <p>
+                    Track npm registry changes in realtime.
+                    <span class="label" al-class="label-success: connected, label-warning: !connected">
+                        {{ connected ? "connected" : "disconnected" }}
+                    </span>
+                </p>
+            </div>
+            <div>
+                <ul class="nwPackages" al-show="packages.length">
+                    <li
+                        class="nwPackages-item"
+                        al-repeat="pkg in packages"
+                        >
+                        <a href="https://npmjs.com/package/{{ pkg.name }}">{{ pkg.name }}</a> @ {{ getPkgVersion(pkg) }}
+                        <p>{{ pkg.description }}</p>
+                    </li>
+                </ul>
+                <p class="well" al-show="!packages.length">
+                    No changes yet.
+                </p>
+            </div>
+        </div>
+    </section>
+    <footer class="fullheight-bottom app-footer">
+        <div class="container">
+            Crafted by <a href="https://github.com/rumkin">Rumkin</a> in 2017.
+            Built with <a href="https://www.npmjs.com/package/changes-stream">changes-stream</a> and <a href="https://www.npmjs.com/package/ws">ws</a>.
+            Source at <a href="https://github.com/rumkin/npmwatch">Github</a>.
+        </div>
+    </footer>    
+</div>
+
+            <script src="https://angularlight.org/bin/alight_0.12.last.debug.js" type="text/javascript" language="javascript"></script>
+            <script type="text/javascript">;(function(){
+	'use strict';
+	
+	let packages = [];
+    
+	let app = alight.bootstrap('body', {
+	    connected: false,
+	    packages,
+	    getPkgVersion(pkg) {
+	        if ('dist-tags' in pkg) {
+	            return pkg['dist-tags'].latest;
 	        }
 	        else {
 	            return '';
 	        }
 	    }
 	});
-    
-    let socket = new WebSocket('wss://npmwatch.rumk.in');
-    
-    socket.onopen = function() {
-        app.$setValue('connected', true);
-        app.$scan();
-    };
-    
-    socket.onclose = function() {
-        app.$setValue('connected', false); 
-        app.$scan();
-    };
-    
-    socket.onmessage = function(e) {
-        let data;
-
-        try {
-            data = JSON.parse(e.data);
-        }
-        catch (e) {
-            return;
-        }
+	
+	function connect() {
+        let socket = new WebSocket('wss://npmwatch.rumk.in');
         
-        if (data.event !== 'npm:update') {
-            return;
-        }
+        socket.onopen = function() {
+            app.$setValue('connected', true);
+            app.$scan();
+        };
         
-        packages = [data.data].concat(packages.slice(0, 300));
-        app.$setValue('packages', packages);
-        app.$scan();
-    };
-})();</script>
-	    <!-- Yandex.Metrika counter -->
-<script type="text/javascript">
-    (function (d, w, c) {
-        (w[c] = w[c] || []).push(function() {
+        socket.onclose = function() {
+            app.$setValue('connected', false); 
+            app.$scan();
+            
+            setTimeout(connect, 1000);
+        };
+        
+        socket.onmessage = function(e) {
+            let data;
+    
             try {
-                w.yaCounter42420184 = new Ya.Metrika({
-                    id:42420184,
-                    clickmap:true,
-                    trackLinks:true,
-                    accurateTrackBounce:true
-                });
-            } catch(e) { }
-        });
-
-        var n = d.getElementsByTagName("script")[0],
-            s = d.createElement("script"),
-            f = function () { n.parentNode.insertBefore(s, n); };
-        s.type = "text/javascript";
-        s.async = true;
-        s.src = "https://mc.yandex.ru/metrika/watch.js";
-
-        if (w.opera == "[object Opera]") {
-            d.addEventListener("DOMContentLoaded", f, false);
-        } else { f(); }
-    })(document, window, "yandex_metrika_callbacks");
-</script>
-<noscript><div><img src="https://mc.yandex.ru/watch/42420184" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
-<!-- /Yandex.Metrika counter -->
+                data = JSON.parse(e.data);
+            }
+            catch (e) {
+                return;
+            }
+            
+            if (data.event !== 'npm:update') {
+                return;
+            }
+            
+            packages = [data.data, ...packages.slice(0, 20)];
+            app.$setValue('packages', packages);
+            app.$scan();
+        };
+	}
+	
+	connect();
+    
+})();</script>
         <!-- Built with JSVille -->
+	<!-- Yandex.Metrika counter -->
+	<script type="text/javascript">
+	    (function (d, w, c) {
+		(w[c] = w[c] || []).push(function() {
+		    try {
+			w.yaCounter42420184 = new Ya.Metrika({
+			    id:42420184,
+			    clickmap:true,
+			    trackLinks:true,
+			    accurateTrackBounce:true
+			});
+		    } catch(e) { }
+		});
+
+		var n = d.getElementsByTagName("script")[0],
+		    s = d.createElement("script"),
+		    f = function () { n.parentNode.insertBefore(s, n); };
+		s.type = "text/javascript";
+		s.async = true;
+		s.src = "https://mc.yandex.ru/metrika/watch.js";
+
+		if (w.opera == "[object Opera]") {
+		    d.addEventListener("DOMContentLoaded", f, false);
+		} else { f(); }
+	    })(document, window, "yandex_metrika_callbacks");
+	</script>
+	<noscript><div><img src="https://mc.yandex.ru/watch/42420184" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+	<!-- /Yandex.Metrika counter -->
     </body>
 </html>
